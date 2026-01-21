@@ -144,8 +144,16 @@ function setupEventListeners() {
     });
 
     // Window events
-    window.addEventListener('beforeunload', () => {
+    document.addEventListener('visibilitychange', () => {
+        if (document.visibilityState === 'hidden') {
+            saveSession();
+            saveToLocalStorage();
+        }
+    });
+
+    window.addEventListener('pagehide', () => {
         saveSession();
+        saveToLocalStorage();
     });
 
     // Keyboard Shortcuts
@@ -558,13 +566,21 @@ function saveSession() {
         time: elements.statSession.textContent || "0:00"
     };
 
-    // Prevent duplicates of the same exact title/progress if recently saved
-    const lastSession = state.history[0];
-    if (lastSession && lastSession.title === session.title && lastSession.progress === session.progress) {
-        return;
+    // Prevent duplicates: If the last entry is for the same title, 
+    // update it instead of adding a new one (to avoid cluttering on refreshes)
+    const existingIndex = state.history.findIndex(h => h.title === session.title);
+    if (existingIndex !== -1) {
+        // Only update if we've made significant progress (more words read)
+        if (session.wordsRead > state.history[existingIndex].wordsRead) {
+            state.history[existingIndex] = session;
+        } else {
+            return; // Already have this or more progress saved
+        }
+    } else {
+        state.history.unshift(session);
     }
 
-    state.history.unshift(session);
+    if (state.history.length > 20) state.history.pop();
     if (state.history.length > 20) state.history.pop(); // Keep last 20
 
     saveToLocalStorage();

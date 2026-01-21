@@ -49,6 +49,7 @@ const elements = {
     contextView: document.getElementById('context-view'),
     contextContent: document.getElementById('context-content'),
     historyList: document.getElementById('history-list'),
+    clearHistoryBtn: document.getElementById('clear-history-btn'),
     tabs: document.querySelectorAll('.tab-btn'),
     tabContents: document.querySelectorAll('.tab-content'),
     presets: document.querySelectorAll('.preset-btn'),
@@ -141,6 +142,15 @@ function setupEventListeners() {
             const sampleKey = btn.dataset.sample;
             processText(samples[sampleKey]);
         });
+    });
+
+    // History management
+    elements.clearHistoryBtn.addEventListener('click', () => {
+        if (confirm('Are you sure you want to clear all reading history?')) {
+            state.history = [];
+            saveToLocalStorage();
+            renderHistory();
+        }
     });
 
     // Window events
@@ -615,19 +625,37 @@ function renderHistory() {
                 <span class="history-stat-value">${session.time}</span>
             </div>
         `;
+
+        const deleteBtn = document.createElement('button');
+        deleteBtn.className = 'delete-btn';
+        deleteBtn.innerHTML = '×';
+        deleteBtn.title = 'Delete from history';
+        deleteBtn.onclick = (e) => {
+            e.stopPropagation();
+            state.history = state.history.filter(h => h.id !== session.id);
+            saveToLocalStorage();
+            renderHistory();
+        };
+
+        card.appendChild(deleteBtn);
         elements.historyList.appendChild(card);
     });
 }
 
 // Local Storage
 function saveToLocalStorage() {
-    localStorage.setItem('speedread_wpm', state.wpm);
-    localStorage.setItem('speedread_history', JSON.stringify(state.history));
-    // Also save current position if reading
-    if (state.words.length > 0) {
-        localStorage.setItem('speedread_last_words', JSON.stringify(state.words));
-        localStorage.setItem('speedread_last_index', state.currentIndex);
-        localStorage.setItem('speedread_last_title', state.currentTitle);
+    try {
+        localStorage.setItem('speedread_wpm', state.wpm);
+        localStorage.setItem('speedread_history', JSON.stringify(state.history));
+
+        // Also save current position if reading
+        if (state.words.length > 0) {
+            localStorage.setItem('speedread_last_words', JSON.stringify(state.words));
+            localStorage.setItem('speedread_last_index', state.currentIndex);
+            localStorage.setItem('speedread_last_title', state.currentTitle);
+        }
+    } catch (e) {
+        console.error("Failed to save to localStorage", e);
     }
 }
 

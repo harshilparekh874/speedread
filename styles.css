@@ -684,6 +684,26 @@ input[type="range"]::-webkit-slider-thumb {
 }
 
 /* History Section */
+.history-header {
+    display: flex;
+    justify-content: flex-end;
+    margin-bottom: 1rem;
+}
+
+.text-btn {
+    background: none;
+    border: none;
+    color: var(--text-dim);
+    font-size: 0.8rem;
+    cursor: pointer;
+    text-decoration: underline;
+    transition: var(--transition);
+}
+
+.text-btn:hover {
+    color: var(--accent-color);
+}
+
 .history-list {
     display: flex;
     flex-direction: column;
@@ -699,7 +719,7 @@ input[type="range"]::-webkit-slider-thumb {
     border-radius: 12px;
     padding: 1rem;
     display: grid;
-    grid-template-columns: 1.5fr 1fr 1fr 1fr;
+    grid-template-columns: 1.5fr 1fr 1fr 1fr 40px;
     align-items: center;
     gap: 1rem;
     transition: var(--transition);
@@ -746,6 +766,23 @@ input[type="range"]::-webkit-slider-thumb {
     font-size: 0.85rem;
     font-weight: 600;
     color: var(--accent-color);
+}
+
+.delete-btn {
+    background: none;
+    border: none;
+    color: var(--text-dim);
+    font-size: 1.2rem;
+    cursor: pointer;
+    transition: var(--transition);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+.delete-btn:hover {
+    color: var(--accent-color);
+    transform: scale(1.1);
 }
 
 .empty-history {

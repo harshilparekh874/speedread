@@ -2,9 +2,6 @@
 
 **SpeedRead** is a high-performance, functional speed reading web app that allows users to convert any book, article, or PDF into a fast-paced reading experience. It uses the **RSVP (Rapid Serial Visual Presentation)** method to display text one word at a time, locked to an **Optimal Recognition Point (ORP)** anchor.
 
-## 🚀 Experience it now
-[Add your GitHub Pages URL here once deployed]
-
 ## ✨ Key Features
 - **Stationary Anchor Reading**: The red ORP letter stays perfectly still, allowing you to read without moving your eyes.
 - **Smart Pacing**: Natural timing logic that adjusts for periods, commas, and long words.

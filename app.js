@@ -579,22 +579,27 @@ function saveSession() {
         time: elements.statSession.textContent || "0:00"
     };
 
-    // Prevent duplicates: If the last entry is for the same title, 
-    // update it instead of adding a new one (to avoid cluttering on refreshes)
+    // Prevent duplicates: If the same title exists, update it.
+    // Otherwise, add a new one.
     const existingIndex = state.history.findIndex(h => h.title === session.title);
     if (existingIndex !== -1) {
-        // Only update if we've made significant progress (more words read)
-        if (session.wordsRead > state.history[existingIndex].wordsRead) {
-            state.history[existingIndex] = session;
-        } else {
-            return; // Already have this or more progress saved
-        }
+        // Update the existing entry
+        const updatedEntry = {
+            ...state.history[existingIndex],
+            wpm: session.wpm,
+            wordsRead: session.wordsRead,
+            progress: session.progress,
+            time: session.time,
+            date: session.date // Update the date to now since it was just "read"
+        };
+        // Remove old and put at top
+        state.history.splice(existingIndex, 1);
+        state.history.unshift(updatedEntry);
     } else {
         state.history.unshift(session);
     }
 
-    if (state.history.length > 20) state.history.pop();
-    if (state.history.length > 20) state.history.pop(); // Keep last 20
+    if (state.history.length > 30) state.history.pop();
 
     saveToLocalStorage();
     renderHistory();
@@ -608,6 +613,7 @@ function renderHistory() {
 
     elements.historyList.innerHTML = '';
     state.history.forEach(session => {
+        const card = document.createElement('div');
         card.className = 'history-card clickable-history';
         card.innerHTML = `
             <div class="history-info">

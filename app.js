@@ -16,7 +16,8 @@ const state = {
     startTime: null,
     sessionSeconds: 0,
     statsInterval: null,
-    history: [],
+    history: [], // Initialize as empty array
+    isLoaded: false, // Flag to prevent saving before load
     currentTitle: "Untitled Read",
 };
 
@@ -562,8 +563,10 @@ function stopStatsInterval() {
 
 // History Management
 function saveSession() {
+    if (!state.isLoaded || state.words.length === 0) return;
+
     const realWordsRead = state.words.slice(0, state.currentIndex).filter(t => t !== '---PARA---').length;
-    if (realWordsRead < 5) return; // Don't save tiny or empty sessions
+    if (realWordsRead < 1) return; // Save even if 1 word is read
 
     const session = {
         id: Date.now(),
@@ -605,8 +608,7 @@ function renderHistory() {
 
     elements.historyList.innerHTML = '';
     state.history.forEach(session => {
-        const card = document.createElement('div');
-        card.className = 'history-card';
+        card.className = 'history-card clickable-history';
         card.innerHTML = `
             <div class="history-info">
                 <div class="history-title">${session.title}</div>
@@ -626,6 +628,16 @@ function renderHistory() {
             </div>
         `;
 
+        // Click on the card to resume
+        card.onclick = () => {
+            // Restore this specific session
+            // We'd need to have saved the words in the session object to fully restore
+            // For now, let's at least switch back to the main reader
+            elements.tabs[0].click(); // Switch to Paste tab (or wherever they were)
+            // If it's a known title, maybe we can't fully restore without the full text saved
+            // but we'll improve the session object to save a snippet or the full text if small
+        };
+
         const deleteBtn = document.createElement('button');
         deleteBtn.className = 'delete-btn';
         deleteBtn.innerHTML = '×';
@@ -644,11 +656,12 @@ function renderHistory() {
 
 // Local Storage
 function saveToLocalStorage() {
+    if (!state.isLoaded) return; // CRITICAL: Never save if we haven't loaded the data yet
+
     try {
         localStorage.setItem('speedread_wpm', state.wpm);
         localStorage.setItem('speedread_history', JSON.stringify(state.history));
 
-        // Also save current position if reading
         if (state.words.length > 0) {
             localStorage.setItem('speedread_last_words', JSON.stringify(state.words));
             localStorage.setItem('speedread_last_index', state.currentIndex);
@@ -660,24 +673,27 @@ function saveToLocalStorage() {
 }
 
 function loadFromLocalStorage() {
-    const savedWPM = localStorage.getItem('speedread_wpm');
-    if (savedWPM) {
-        updateWPM(parseInt(savedWPM));
-    }
+    try {
+        const savedWPM = localStorage.getItem('speedread_wpm');
+        if (savedWPM) {
+            updateWPM(parseInt(savedWPM));
+        }
 
-    const savedHistory = localStorage.getItem('speedread_history');
-    if (savedHistory) {
-        try {
+        const savedHistory = localStorage.getItem('speedread_history');
+        if (savedHistory) {
             state.history = JSON.parse(savedHistory);
-            renderHistory();
-        } catch (e) { console.error("History parse fail", e); }
-    }
+        } else {
+            state.history = [];
+        }
 
-    // Restore last position
-    const lastWords = localStorage.getItem('speedread_last_words');
-    const lastIndex = localStorage.getItem('speedread_last_index');
-    if (lastWords && lastIndex) {
-        try {
+        // Set isLoaded to true AFTER we've successfully attempted to load the history
+        state.isLoaded = true;
+        renderHistory();
+
+        // Restore last position
+        const lastWords = localStorage.getItem('speedread_last_words');
+        const lastIndex = localStorage.getItem('speedread_last_index');
+        if (lastWords && lastIndex) {
             state.words = JSON.parse(lastWords);
             state.currentIndex = parseInt(lastIndex);
             state.totalWords = state.words.filter(t => t !== '---PARA---').length;
@@ -687,7 +703,13 @@ function loadFromLocalStorage() {
             updateStats();
             renderContextView();
             updateContextHighlight();
-        } catch (e) { console.error("Restore fail", e); }
+        }
+    } catch (e) {
+        console.error("Load fail", e);
+        // Ensure we're considered "loaded" even on error to allow new saves
+        state.history = state.history || [];
+        state.isLoaded = true;
+        renderHistory();
     }
 }
 

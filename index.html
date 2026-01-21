@@ -1,0 +1,187 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SpeedRead – Read 3x Faster</title>
+    <meta name="description"
+        content="Speed reading that actually works. Convert any book, article, or PDF into a fast-paced reading experience.">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap"
+        rel="stylesheet">
+    <link rel="stylesheet" href="styles.css">
+    <!-- PDF.js -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+</head>
+
+<body class="dark-mode">
+    <div id="landing-page" class="view">
+        <nav>
+            <div class="logo">SpeedRead<span>.</span></div>
+        </nav>
+        <main class="hero">
+            <div class="hero-content">
+                <h1 class="fade-in">Read 3x faster.<br>Starting now.</h1>
+                <p class="subheadline fade-in delay-1">Speed reading that actually works. One word at a time, perfectly
+                    paced.</p>
+                <div class="cta-container fade-in delay-2">
+                    <button id="start-btn" class="primary-btn">Try it now</button>
+                </div>
+            </div>
+
+            <div class="feature-grid fade-in delay-3">
+                <div class="feature-card">
+                    <div class="icon">📚</div>
+                    <h3>Any Content</h3>
+                    <p>Works with any book, article, or PDF file.</p>
+                </div>
+                <div class="feature-card">
+                    <div class="icon">⚡</div>
+                    <h3>Adjustable Speed</h3>
+                    <p>Read from 100 to 800 words per minute.</p>
+                </div>
+                <div class="feature-card">
+                    <div class="icon">📈</div>
+                    <h3>Track Progress</h3>
+                    <p>Real-time session stats and progress tracking.</p>
+                </div>
+            </div>
+        </main>
+        <footer>
+            <p>&copy; 2026 SpeedRead. No account required.</p>
+        </footer>
+    </div>
+
+    <div id="app-page" class="view hidden">
+        <header class="app-header">
+            <div class="logo small clickable" id="back-to-landing">SpeedRead<span>.</span></div>
+            <div class="session-stats">
+                <div class="stat-item">
+                    <span class="stat-label">WPM</span>
+                    <span id="stat-wpm" class="stat-value">300</span>
+                </div>
+                <div class="stat-item">
+                    <span class="stat-label">Progress</span>
+                    <span id="stat-progress" class="stat-value">0%</span>
+                </div>
+                <div class="stat-item">
+                    <span class="stat-label">Words</span>
+                    <span id="stat-words" class="stat-value">0/0</span>
+                </div>
+                <div class="stat-item">
+                    <span class="stat-label">Remaining</span>
+                    <span id="stat-remaining" class="stat-value">0:00</span>
+                </div>
+                <div class="stat-item">
+                    <span class="stat-label">Session</span>
+                    <span id="stat-session" class="stat-value">0:00</span>
+                </div>
+            </div>
+        </header>
+
+        <main class="app-main">
+            <div class="app-layout">
+                <!-- Left Side: Main Reader -->
+                <div class="reader-section">
+                    <!-- Reader Display -->
+                    <div class="reader-container">
+                        <div id="reader-display" class="reader-display">
+                            <div class="focus-line"></div>
+                            <div id="word-target" class="word-container">
+                                <span class="initial-message">Upload a file or paste text to start</span>
+                            </div>
+                        </div>
+                        <div class="progress-bar-container">
+                            <div id="progress-bar" class="progress-bar"></div>
+                        </div>
+                    </div>
+
+                    <!-- Controls -->
+                    <div class="reader-controls">
+                        <div class="control-group">
+                            <button id="restart-btn" title="Restart" class="icon-btn">↺</button>
+                            <button id="prev-btn" title="Back 10 words" class="icon-btn">⏮</button>
+                            <button id="play-pause-btn" class="play-btn">▶</button>
+                            <button id="next-btn" title="Forward 10 words" class="icon-btn">⏭</button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Right Side: Context View (Hidden by default) -->
+                <div id="context-view" class="context-section hidden">
+                    <div class="context-container">
+                        <div id="context-content" class="context-content">
+                            <!-- Sentences will be injected here -->
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Speed & Inputs (Moved outside layout for better positioning) -->
+            <div class="app-footer-controls">
+                <div class="speed-control-standalone">
+                    <div class="toggle-container">
+                        <label class="switch">
+                            <input type="checkbox" id="context-toggle">
+                            <span class="slider round"></span>
+                        </label>
+                        <span class="toggle-label">Context View</span>
+                    </div>
+                    <div class="slider-container">
+                        <label for="wpm-slider">Speed: <span id="wpm-value">300</span> WPM</label>
+                        <input type="range" id="wpm-slider" min="100" max="800" step="10" value="300">
+                    </div>
+                    <div class="presets">
+                        <button class="preset-btn" data-wpm="200">200</button>
+                        <button class="preset-btn active" data-wpm="300">300</button>
+                        <button class="preset-btn" data-wpm="450">450</button>
+                        <button class="preset-btn" data-wpm="600">600</button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Input Options -->
+            <div class="input-section">
+                <div class="tabs">
+                    <button class="tab-btn active" data-tab="paste-tab">Paste Text</button>
+                    <button class="tab-btn" data-tab="upload-tab">Upload File</button>
+                    <button class="tab-btn" data-tab="samples-tab">Sample Content</button>
+                </div>
+
+                <div id="paste-tab" class="tab-content">
+                    <textarea id="text-input" placeholder="Paste your article or book excerpt here..."></textarea>
+                    <button id="load-text-btn" class="secondary-btn">Load Text</button>
+                </div>
+
+                <div id="upload-tab" class="tab-content hidden">
+                    <div class="upload-zone" id="drop-zone">
+                        <input type="file" id="file-input" accept=".pdf,.txt" hidden>
+                        <div class="upload-message">
+                            <span>📄</span>
+                            <p>Click or drag PDF or TXT file here</p>
+                        </div>
+                    </div>
+                </div>
+
+                <div id="samples-tab" class="tab-content hidden">
+                    <div class="sample-grid">
+                        <button class="sample-btn" data-sample="finance">Psychology of Money (Excerpt)</button>
+                        <button class="sample-btn" data-sample="tech">The Future of AI (Article)</button>
+                        <button class="sample-btn" data-sample="literature">The Great Gatsby (Chapter 1)</button>
+                    </div>
+                </div>
+            </div>
+        </main>
+
+        <div id="loader" class="loader-overlay hidden">
+            <div class="spinner"></div>
+            <p>Processing content...</p>
+        </div>
+    </div>
+
+    <script src="app.js"></script>
+</body>
+
+</html>

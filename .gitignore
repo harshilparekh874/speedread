@@ -1,0 +1,9 @@
+# OS files
+.DS_Store
+Thumbs.db
+
+# Project files
+.gemini/
+.agent/
+node_modules/
+dist/

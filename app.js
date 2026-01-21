@@ -16,6 +16,8 @@ const state = {
     startTime: null,
     sessionSeconds: 0,
     statsInterval: null,
+    history: [],
+    currentTitle: "Untitled Read",
 };
 
 // DOM Elements
@@ -46,6 +48,7 @@ const elements = {
     contextToggle: document.getElementById('context-toggle'),
     contextView: document.getElementById('context-view'),
     contextContent: document.getElementById('context-content'),
+    historyList: document.getElementById('history-list'),
     tabs: document.querySelectorAll('.tab-btn'),
     tabContents: document.querySelectorAll('.tab-content'),
     presets: document.querySelectorAll('.preset-btn'),
@@ -175,6 +178,9 @@ function switchView(view) {
 function processText(text) {
     if (!text || text.trim() === '') return;
 
+    // Save previous session if it had progress before loading new one
+    saveSession();
+
     // Show loader
     elements.loader.classList.remove('hidden');
 
@@ -241,6 +247,7 @@ function processText(text) {
         state.currentSentenceIndex = -1;
         state.isPlaying = false;
         state.startTime = null;
+        state.currentTitle = text.substring(0, 30).trim() + (text.length > 30 ? "..." : "");
         elements.statSession.textContent = '0:00';
 
         renderContextView();
@@ -323,6 +330,7 @@ function runLoop() {
             state.isPlaying = false;
             elements.playPauseBtn.textContent = '▶';
             stopStatsInterval();
+            saveSession(); // Auto-save when finished
         }
         return;
     }
@@ -524,15 +532,77 @@ function stopStatsInterval() {
     if (state.statsInterval) clearInterval(state.statsInterval);
 }
 
+// History Management
+function saveSession() {
+    const realWordsRead = state.words.slice(0, state.currentIndex).filter(t => t !== '---PARA---').length;
+    if (realWordsRead < 5) return; // Don't save tiny or empty sessions
+
+    const session = {
+        id: Date.now(),
+        title: state.currentTitle,
+        date: new Date().toLocaleDateString() + ' ' + new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+        wpm: state.wpm,
+        wordsRead: realWordsRead,
+        totalWords: state.totalWords,
+        progress: Math.round((realWordsRead / state.totalWords) * 100),
+        time: elements.statSession.textContent
+    };
+
+    state.history.unshift(session);
+    if (state.history.length > 20) state.history.pop(); // Keep last 20
+
+    saveToLocalStorage();
+    renderHistory();
+}
+
+function renderHistory() {
+    if (state.history.length === 0) {
+        elements.historyList.innerHTML = '<p class="empty-history">No reading sessions saved yet.</p>';
+        return;
+    }
+
+    elements.historyList.innerHTML = '';
+    state.history.forEach(session => {
+        const card = document.createElement('div');
+        card.className = 'history-card';
+        card.innerHTML = `
+            <div class="history-info">
+                <div class="history-title">${session.title}</div>
+                <div class="history-date">${session.date}</div>
+            </div>
+            <div class="history-stat">
+                <span class="history-stat-label">WPM</span>
+                <span class="history-stat-value">${session.wpm}</span>
+            </div>
+            <div class="history-stat">
+                <span class="history-stat-label">Progress</span>
+                <span class="history-stat-value">${session.progress}%</span>
+            </div>
+            <div class="history-stat">
+                <span class="history-stat-label">Time</span>
+                <span class="history-stat-value">${session.time}</span>
+            </div>
+        `;
+        elements.historyList.appendChild(card);
+    });
+}
+
 // Local Storage
 function saveToLocalStorage() {
     localStorage.setItem('speedread_wpm', state.wpm);
+    localStorage.setItem('speedread_history', JSON.stringify(state.history));
 }
 
 function loadFromLocalStorage() {
     const savedWPM = localStorage.getItem('speedread_wpm');
     if (savedWPM) {
         updateWPM(parseInt(savedWPM));
+    }
+
+    const savedHistory = localStorage.getItem('speedread_history');
+    if (savedHistory) {
+        state.history = JSON.parse(savedHistory);
+        renderHistory();
     }
 }
 

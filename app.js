@@ -494,7 +494,7 @@ function skipWords(n) {
 }
 
 function updateWPM(wpm) {
-    state.wpm = Math.max(100, Math.min(800, wpm));
+    state.wpm = Math.max(100, Math.min(1000, wpm));
     elements.wpmSlider.value = state.wpm;
     elements.wpmValue.textContent = state.wpm;
     elements.statWpm.textContent = state.wpm;

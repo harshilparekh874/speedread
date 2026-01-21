@@ -143,6 +143,11 @@ function setupEventListeners() {
         });
     });
 
+    // Window events
+    window.addEventListener('beforeunload', () => {
+        saveSession();
+    });
+
     // Keyboard Shortcuts
     window.addEventListener('keydown', (e) => {
         if (elements.appPage.classList.contains('hidden')) return;
@@ -369,6 +374,11 @@ function runLoop() {
     updateStats();
     updateContextHighlight();
 
+    // Auto-save progress every 50 words
+    if (state.currentIndex % 50 === 0) {
+        saveToLocalStorage();
+    }
+
     state.timer = setTimeout(runLoop, baseDelay * multiplier);
 }
 
@@ -545,8 +555,14 @@ function saveSession() {
         wordsRead: realWordsRead,
         totalWords: state.totalWords,
         progress: Math.round((realWordsRead / state.totalWords) * 100),
-        time: elements.statSession.textContent
+        time: elements.statSession.textContent || "0:00"
     };
+
+    // Prevent duplicates of the same exact title/progress if recently saved
+    const lastSession = state.history[0];
+    if (lastSession && lastSession.title === session.title && lastSession.progress === session.progress) {
+        return;
+    }
 
     state.history.unshift(session);
     if (state.history.length > 20) state.history.pop(); // Keep last 20
@@ -591,6 +607,12 @@ function renderHistory() {
 function saveToLocalStorage() {
     localStorage.setItem('speedread_wpm', state.wpm);
     localStorage.setItem('speedread_history', JSON.stringify(state.history));
+    // Also save current position if reading
+    if (state.words.length > 0) {
+        localStorage.setItem('speedread_last_words', JSON.stringify(state.words));
+        localStorage.setItem('speedread_last_index', state.currentIndex);
+        localStorage.setItem('speedread_last_title', state.currentTitle);
+    }
 }
 
 function loadFromLocalStorage() {
@@ -601,8 +623,27 @@ function loadFromLocalStorage() {
 
     const savedHistory = localStorage.getItem('speedread_history');
     if (savedHistory) {
-        state.history = JSON.parse(savedHistory);
-        renderHistory();
+        try {
+            state.history = JSON.parse(savedHistory);
+            renderHistory();
+        } catch (e) { console.error("History parse fail", e); }
+    }
+
+    // Restore last position
+    const lastWords = localStorage.getItem('speedread_last_words');
+    const lastIndex = localStorage.getItem('speedread_last_index');
+    if (lastWords && lastIndex) {
+        try {
+            state.words = JSON.parse(lastWords);
+            state.currentIndex = parseInt(lastIndex);
+            state.totalWords = state.words.filter(t => t !== '---PARA---').length;
+            state.currentTitle = localStorage.getItem('speedread_last_title') || "Resumed Read";
+
+            updateDisplay();
+            updateStats();
+            renderContextView();
+            updateContextHighlight();
+        } catch (e) { console.error("Restore fail", e); }
     }
 }
 
